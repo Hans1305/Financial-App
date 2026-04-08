@@ -1,4 +1,4 @@
-import { formatZarFromCents } from '@/lib/money'
+import { formatMoneyFromCents } from '@/lib/money'
 import type { BudgetCategory } from '@/lib/finance/types'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 
@@ -10,7 +10,13 @@ function getStatus(category: BudgetCategory) {
   return { label: 'Under', color: '#22c55e' }
 }
 
-export function BudgetCategoryRow({ category }: { category: BudgetCategory }) {
+export function BudgetCategoryRow({
+  category,
+  money,
+}: {
+  category: BudgetCategory
+  money: { locale: string; currency: string }
+}) {
   const status = getStatus(category)
   const ratio = category.limitCents > 0 ? category.spentCents / category.limitCents : 0
 
@@ -24,8 +30,11 @@ export function BudgetCategoryRow({ category }: { category: BudgetCategory }) {
         <div className="shrink-0 text-right">
           <div className="text-xs text-zinc-500 dark:text-zinc-400">{status.label}</div>
           <div className="text-sm font-medium">
-            {formatZarFromCents(category.spentCents)}
-            <span className="text-zinc-500 dark:text-zinc-400"> / {formatZarFromCents(category.limitCents)}</span>
+            {formatMoneyFromCents(category.spentCents, money)}
+            <span className="text-zinc-500 dark:text-zinc-400">
+              {' '}
+              / {formatMoneyFromCents(category.limitCents, money)}
+            </span>
           </div>
         </div>
       </div>

@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner'
 import { Card } from '@/components/ui/Card'
-import { formatZarFromCents } from '@/lib/money'
+import { formatMoneyFromCents } from '@/lib/money'
 import { demoAccounts, demoCategories, demoTransactions } from '@/lib/finance/demoData'
 import type { Account, BudgetCategory, Transaction } from '@/lib/finance/types'
 import { BudgetCategoryRow } from '@/components/dashboard/BudgetCategoryRow'
@@ -11,23 +11,27 @@ import { TransactionForm } from '@/components/dashboard/TransactionForm'
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
 import { BankConnections } from '@/components/dashboard/BankConnections'
 import { DashboardGraphs } from '@/components/dashboard/DashboardGraphs'
+import { usePersistentState } from '@/lib/usePersistentState'
+import type { CountryCode } from '@/lib/finance/countries'
+import { getCountry } from '@/lib/finance/countries'
+import { CountrySelector } from '@/components/dashboard/CountrySelector'
+import { BudgetEditor } from '@/components/dashboard/BudgetEditor'
 
 function buildId(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`
 }
 
 export function Dashboard() {
-  const [userName, setUserName] = useState(() => {
-    if (typeof window === 'undefined') return 'Michelle Andipatin'
-    return window.localStorage.getItem('pf_user_name') ?? 'Michelle Andipatin'
-  })
-  const [accounts, setAccounts] = useState<Account[]>(demoAccounts)
-  const [categories] = useState<BudgetCategory[]>(demoCategories)
-  const [transactions, setTransactions] = useState<Transaction[]>(demoTransactions)
+  const [profileId] = usePersistentState('pf_profile_id', buildId('profile'))
+  const [userName, setUserName] = usePersistentState('pf_profile_name', 'Michelle Andipatin')
+  const [countryCode, setCountryCode] = usePersistentState<CountryCode>('pf_profile_country', 'ZA')
 
-  useEffect(() => {
-    window.localStorage.setItem('pf_user_name', userName)
-  }, [userName])
+  const [accounts, setAccounts] = usePersistentState<Account[]>(`pf_${profileId}_accounts`, demoAccounts)
+  const [categories, setCategories] = usePersistentState<BudgetCategory[]>(`pf_${profileId}_categories`, demoCategories)
+  const [transactions, setTransactions] = usePersistentState<Transaction[]>(`pf_${profileId}_transactions`, demoTransactions)
+
+  const country = useMemo(() => getCountry(countryCode), [countryCode])
+  const money = useMemo(() => ({ locale: country.locale, currency: country.currency }), [country.currency, country.locale])
 
   const totalBalanceCents = useMemo(
     () => accounts.reduce((sum, a) => sum + a.balanceCents, 0),
@@ -93,31 +97,31 @@ export function Dashboard() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Total balances</div>
-          <div className="mt-2 text-2xl font-semibold">{formatZarFromCents(totalBalanceCents)}</div>
+          <div className="mt-2 text-2xl font-semibold">{formatMoneyFromCents(totalBalanceCents, money)}</div>
           <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Across all accounts</div>
         </Card>
         <Card>
           <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Income</div>
           <div className="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-400">
-            {formatZarFromCents(totals.incomeCents)}
+            {formatMoneyFromCents(totals.incomeCents, money)}
           </div>
           <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">All transactions (demo)</div>
         </Card>
         <Card>
           <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Expenses</div>
           <div className="mt-2 text-2xl font-semibold text-rose-600 dark:text-rose-400">
-            {formatZarFromCents(totals.expensesCents)}
+            {formatMoneyFromCents(totals.expensesCents, money)}
           </div>
           <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">All transactions (demo)</div>
         </Card>
         <Card>
           <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Net</div>
-          <div className="mt-2 text-2xl font-semibold">{formatZarFromCents(totals.netCents)}</div>
+          <div className="mt-2 text-2xl font-semibold">{formatMoneyFromCents(totals.netCents, money)}</div>
           <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Income minus expenses</div>
         </Card>
       </div>
 
-      <DashboardGraphs categories={categoriesWithSpent} />
+      <DashboardGraphs categories={categoriesWithSpent} money={money} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -134,7 +138,7 @@ export function Dashboard() {
                   <div className="mb-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">{g.group}</div>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {g.items.map((c) => (
-                      <BudgetCategoryRow key={c.id} category={c} />
+                      <BudgetCategoryRow key={c.id} category={c} money={money} />
                     ))}
                   </div>
                 </div>
@@ -144,10 +148,14 @@ export function Dashboard() {
         </div>
 
         <div className="space-y-4">
+          <CountrySelector value={countryCode} onChange={setCountryCode} />
           <BankConnections
+            countryName={country.name}
+            banks={country.banks}
             accounts={accounts}
             onAddAccount={(account) => setAccounts((prev) => [account, ...prev])}
           />
+          <BudgetEditor categories={categories} onChangeCategories={setCategories} />
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="text-sm font-semibold">Quick add</div>
             <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Manual transaction entry</div>
@@ -178,7 +186,7 @@ export function Dashboard() {
             </div>
           </div>
 
-          <RecentTransactions transactions={transactions} accounts={accounts} categories={categoriesWithSpent} />
+          <RecentTransactions transactions={transactions} accounts={accounts} categories={categoriesWithSpent} money={money} />
         </div>
       </div>
     </div>

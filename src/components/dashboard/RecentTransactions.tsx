@@ -1,14 +1,16 @@
 import type { Account, BudgetCategory, Transaction } from '@/lib/finance/types'
-import { formatZarFromCents } from '@/lib/money'
+import { formatMoneyFromCents } from '@/lib/money'
 
 export function RecentTransactions({
   transactions,
   accounts,
   categories,
+  money,
 }: {
   transactions: Transaction[]
   accounts: Account[]
   categories: BudgetCategory[]
+  money: { locale: string; currency: string }
 }) {
   const accountMap = new Map(accounts.map((a) => [a.id, a]))
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
@@ -44,7 +46,7 @@ export function RecentTransactions({
                   isExpense ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400',
                 ].join(' ')}
               >
-                {formatZarFromCents(t.amountCents)}
+                {formatMoneyFromCents(t.amountCents, money)}
               </div>
             </div>
           )

@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import type { BudgetCategory } from '@/lib/finance/types'
 import { Card } from '@/components/ui/Card'
-import { formatZarFromCents } from '@/lib/money'
+import { formatMoneyFromCents } from '@/lib/money'
 
 const GROUP_COLORS: Record<string, string> = {
   'Housing & Utilities': '#0ea5e9',
@@ -17,7 +17,13 @@ function getColor(group: string) {
   return GROUP_COLORS[group] ?? '#64748b'
 }
 
-export function DashboardGraphs({ categories }: { categories: BudgetCategory[] }) {
+export function DashboardGraphs({
+  categories,
+  money,
+}: {
+  categories: BudgetCategory[]
+  money: { locale: string; currency: string }
+}) {
   const spendByGroup = useMemo(() => {
     const map = new Map<string, { group: string; spentCents: number; limitCents: number }>()
     for (const c of categories) {
@@ -62,7 +68,7 @@ export function DashboardGraphs({ categories }: { categories: BudgetCategory[] }
                 <div
                   key={g.group}
                   style={{ width: `${pct}%`, backgroundColor: getColor(g.group) }}
-                  title={`${g.group}: ${formatZarFromCents(g.spentCents)}`}
+                  title={`${g.group}: ${formatMoneyFromCents(g.spentCents, money)}`}
                 />
               )
             })}
@@ -79,7 +85,7 @@ export function DashboardGraphs({ categories }: { categories: BudgetCategory[] }
                   <div className="truncate text-xs font-medium">{g.group}</div>
                 </div>
                 <div className="shrink-0 text-right text-xs text-zinc-600 dark:text-zinc-300">
-                  {formatZarFromCents(g.spentCents)}
+                  {formatMoneyFromCents(g.spentCents, money)}
                   {g.limitCents > 0 ? (
                     <span className="text-zinc-500 dark:text-zinc-400"> ({Math.round(ratio * 100)}%)</span>
                   ) : null}
@@ -103,7 +109,7 @@ export function DashboardGraphs({ categories }: { categories: BudgetCategory[] }
                   <div
                     className="w-full rounded-t-lg"
                     style={{ height: `${Math.max(6, Math.round(pct * 140))}px`, backgroundColor: getColor(c.group) }}
-                    title={`${c.name}: ${formatZarFromCents(c.spentCents)}`}
+                    title={`${c.name}: ${formatMoneyFromCents(c.spentCents, money)}`}
                   />
                   <div className="w-full truncate text-center text-[11px] text-zinc-600 dark:text-zinc-300" title={c.name}>
                     {c.name}
