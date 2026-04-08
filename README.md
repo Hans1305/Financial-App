@@ -20,7 +20,12 @@ Open `http://localhost:3000/`.
 
 ### GitHub + Deploy
 
-- This app uses Next.js route handlers (`/api/...`) for future Open Banking scaffolding, which requires a server runtime.
-- Recommended hosting: Vercel (connect your GitHub repo in the Vercel dashboard).
+- This app includes Next.js route handlers (`/api/...`) for future Open Banking scaffolding.
+- GitHub Pages is static hosting, so `/api/...` won’t work there.
 
-If you must host on GitHub Pages, the app must be converted to a static export (API routes won’t work there).
+#### GitHub Pages (static demo)
+
+This repository is configured to deploy a static demo to GitHub Pages via GitHub Actions.
+
+- URL: `https://hans1305.github.io/Financial-App/`
+- Enable it in GitHub: Repo → Settings → Pages → Source: GitHub Actions

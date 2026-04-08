@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Financial Budget App",
   description: "Personal finance, budgeting, and expense tracking dashboard.",
-  manifest: "/manifest.webmanifest",
+  manifest: "manifest.webmanifest",
   appleWebApp: {
     capable: true,
     title: "Financial Budget App",
