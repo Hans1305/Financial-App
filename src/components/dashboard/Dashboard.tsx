@@ -10,12 +10,13 @@ import { BudgetCategoryRow } from '@/components/dashboard/BudgetCategoryRow'
 import { TransactionForm } from '@/components/dashboard/TransactionForm'
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
 import { BankConnections } from '@/components/dashboard/BankConnections'
-import { DashboardGraphs } from '@/components/dashboard/DashboardGraphs'
 import { usePersistentState } from '@/lib/usePersistentState'
 import type { CountryCode } from '@/lib/finance/countries'
 import { getCountry } from '@/lib/finance/countries'
 import { CountrySelector } from '@/components/dashboard/CountrySelector'
 import { BudgetEditor } from '@/components/dashboard/BudgetEditor'
+import { ShowcasePanels } from '@/components/dashboard/ShowcasePanels'
+import { WeddingGoalCard } from '@/components/dashboard/WeddingGoalCard'
 
 function buildId(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`
@@ -57,6 +58,13 @@ export function Dashboard() {
     }
     return categories.map((c) => ({ ...c, spentCents: spentByCategoryId.get(c.id) ?? 0 }))
   }, [categories, transactions])
+
+  const wedding = useMemo(() => {
+    const weddingCategory = categories.find((c) => c.id === 'cat_wedding' || c.name.toLowerCase().includes('wedding'))
+    const paidCents = weddingCategory ? (categoriesWithSpent.find((c) => c.id === weddingCategory.id)?.spentCents ?? 0) : 0
+    const targetCents = weddingCategory?.limitCents ?? 50_000_00
+    return { paidCents, targetCents }
+  }, [categories, categoriesWithSpent])
 
   const grouped = useMemo(() => {
     const map = new Map<string, BudgetCategory[]>()
@@ -121,7 +129,15 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <DashboardGraphs categories={categoriesWithSpent} money={money} />
+      <WeddingGoalCard
+        targetCents={wedding.targetCents}
+        paidCents={wedding.paidCents}
+        deadlineIso="2026-06-10"
+        weddingIso="2026-07-10"
+        money={money}
+      />
+
+      <ShowcasePanels baseCurrency={money.currency} categories={categoriesWithSpent} money={money} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">

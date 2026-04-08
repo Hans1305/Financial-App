@@ -1,8 +1,8 @@
 import type { Account, BudgetCategory, Transaction } from '@/lib/finance/types'
 
 export const demoAccounts: Account[] = [
-  { id: 'acc_checking', name: 'Main Checking', type: 'checking', balanceCents: 184_250_00 },
-  { id: 'acc_credit', name: 'Credit Card', type: 'credit', balanceCents: -12_480_00 },
+  { id: 'acc_checking', name: 'Main Checking', type: 'checking', balanceCents: 65_000_00 },
+  { id: 'acc_credit', name: 'Credit Card', type: 'credit', balanceCents: 0 },
 ]
 
 export const demoCategories: BudgetCategory[] = [
@@ -23,6 +23,8 @@ export const demoCategories: BudgetCategory[] = [
   { id: 'cat_school', group: 'Living & Services', name: 'School Fees/Education', limitCents: 5_000_00, spentCents: 0 },
 
   { id: 'cat_savings', group: 'Savings/Investments', name: 'Savings/Investments', limitCents: 4_000_00, spentCents: 0 },
+
+  { id: 'cat_wedding', group: 'Other', name: "Bryn's Wedding Fund", limitCents: 50_000_00, spentCents: 0 },
 
   { id: 'cat_security', group: 'Other', name: 'Security/Alarm', limitCents: 0, spentCents: 0 },
   { id: 'cat_gardening', group: 'Other', name: 'Gardening', limitCents: 0, spentCents: 0 },
@@ -154,6 +156,15 @@ export const demoTransactions: Transaction[] = [
     amountCents: -3_000_00,
     merchant: 'Savings',
     description: 'Transfer to savings/investments',
+  },
+  {
+    id: 'txn_14',
+    txnDate: new Date().toISOString().slice(0, 10),
+    accountId: 'acc_checking',
+    categoryId: 'cat_wedding',
+    amountCents: -2_500_00,
+    merchant: "Bryn's Wedding",
+    description: 'Wedding fund payment (paid so far)',
   },
 ]
 
