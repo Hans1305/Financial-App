@@ -17,15 +17,13 @@ function buildId(prefix: string) {
 }
 
 export function Dashboard() {
-  const [userName, setUserName] = useState('Michelle Andipatin')
+  const [userName, setUserName] = useState(() => {
+    if (typeof window === 'undefined') return 'Michelle Andipatin'
+    return window.localStorage.getItem('pf_user_name') ?? 'Michelle Andipatin'
+  })
   const [accounts, setAccounts] = useState<Account[]>(demoAccounts)
-  const [categories, setCategories] = useState<BudgetCategory[]>(demoCategories)
+  const [categories] = useState<BudgetCategory[]>(demoCategories)
   const [transactions, setTransactions] = useState<Transaction[]>(demoTransactions)
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem('pf_user_name')
-    if (stored) setUserName(stored)
-  }, [])
 
   useEffect(() => {
     window.localStorage.setItem('pf_user_name', userName)
