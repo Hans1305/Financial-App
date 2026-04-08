@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { SupabaseConfigBanner } from '@/components/SupabaseConfigBanner'
 import { Card } from '@/components/ui/Card'
 import { formatMoneyFromCents } from '@/lib/money'
@@ -13,19 +13,39 @@ import { BankConnections } from '@/components/dashboard/BankConnections'
 import { usePersistentState } from '@/lib/usePersistentState'
 import type { CountryCode } from '@/lib/finance/countries'
 import { getCountry } from '@/lib/finance/countries'
-import { CountrySelector } from '@/components/dashboard/CountrySelector'
 import { BudgetEditor } from '@/components/dashboard/BudgetEditor'
 import { ShowcasePanels } from '@/components/dashboard/ShowcasePanels'
 import { WeddingGoalCard } from '@/components/dashboard/WeddingGoalCard'
+import type { Profile } from '@/components/dashboard/ProfileSwitcher'
+import { ProfileSwitcher } from '@/components/dashboard/ProfileSwitcher'
 
 function buildId(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`
 }
 
 export function Dashboard() {
-  const [profileId] = usePersistentState('pf_profile_id', buildId('profile'))
-  const [userName, setUserName] = usePersistentState('pf_profile_name', 'Michelle Andipatin')
-  const [countryCode, setCountryCode] = usePersistentState<CountryCode>('pf_profile_country', 'ZA')
+  const [profileId, setProfileId] = usePersistentState('pf_profile_id', buildId('profile'))
+  const [legacyUserName, setLegacyUserName] = usePersistentState('pf_profile_name', 'Michelle Andipatin')
+  const [legacyCountryCode, setLegacyCountryCode] = usePersistentState<CountryCode>('pf_profile_country', 'ZA')
+
+  const [profiles, setProfiles] = usePersistentState<Profile[]>('pf_profiles', [])
+
+  useEffect(() => {
+    if (profiles.length) return
+    const initial: Profile = { id: profileId, name: legacyUserName, countryCode: legacyCountryCode }
+    setProfiles([initial])
+  }, [legacyCountryCode, legacyUserName, profileId, profiles.length, setProfiles])
+
+  useEffect(() => {
+    if (!profiles.length) return
+    const exists = profiles.some((p) => p.id === profileId)
+    if (exists) return
+    setProfileId(profiles[0].id)
+  }, [profileId, profiles, setProfileId])
+
+  const activeProfile = useMemo(() => profiles.find((p) => p.id === profileId), [profiles, profileId])
+  const userName = activeProfile?.name ?? legacyUserName
+  const countryCode = (activeProfile?.countryCode ?? legacyCountryCode) as CountryCode
 
   const [accounts, setAccounts] = usePersistentState<Account[]>(`pf_${profileId}_accounts`, demoAccounts)
   const [categories, setCategories] = usePersistentState<BudgetCategory[]>(`pf_${profileId}_categories`, demoCategories)
@@ -85,15 +105,7 @@ export function Dashboard() {
         <div>
           <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Monthly overview</div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Budget dashboard</h1>
-          <div className="mt-2 flex items-center gap-2">
-            <div className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Name</div>
-            <input
-              className="h-9 w-64 rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none ring-0 placeholder:text-zinc-400 focus:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-600 dark:focus:border-zinc-700"
-              placeholder="e.g., Neville"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-            />
-          </div>
+          <div className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">User: {userName}</div>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
           Demo data (Phase 1 scaffold)
@@ -164,7 +176,19 @@ export function Dashboard() {
         </div>
 
         <div className="space-y-4">
-          <CountrySelector value={countryCode} onChange={setCountryCode} />
+          <ProfileSwitcher
+            profiles={profiles}
+            activeProfileId={profileId}
+            onChangeActiveProfileId={setProfileId}
+            onUpsertProfile={(profile) => {
+              setProfiles((prev) => prev.map((p) => (p.id === profile.id ? profile : p)))
+              if (profile.id === profileId) {
+                setLegacyUserName(profile.name)
+                setLegacyCountryCode(profile.countryCode)
+              }
+            }}
+            onCreateProfile={(profile) => setProfiles((prev) => [profile, ...prev])}
+          />
           <BankConnections
             countryName={country.name}
             banks={country.banks}
